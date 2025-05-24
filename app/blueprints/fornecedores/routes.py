@@ -5,6 +5,7 @@ from ...models.fornecedor import Fornecedor
 from .forms import FornecedorForm
 from ...services.id_generator import generate_id
 from ...utils.logger import setup_logger
+import mysql.connector
 
 logger = setup_logger()
 
@@ -64,6 +65,12 @@ def deletar_fornecedor(id):
             flash('Fornecedor deletado com sucesso!', 'success')
         else:
             flash('Fornecedor não encontrado!', 'danger')
+    except mysql.connector.errors.IntegrityError as e:
+        if e.errno == 1451:
+            flash('Não é possível excluir o fornecedor porque ele está associado a veículos. Remova os veículos associados primeiro.', 'danger')
+        else:
+            flash(f'Erro ao deletar fornecedor: {str(e)}', 'danger')
+        logger.error(f"Erro ao deletar fornecedor: {str(e)}")
     except Exception as e:
         flash(f'Erro ao deletar fornecedor: {str(e)}', 'danger')
         logger.error(f"Erro ao deletar fornecedor: {str(e)}")
