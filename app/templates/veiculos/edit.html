@@ -1,0 +1,70 @@
+<!-- app/templates/veiculos/edit.html -->
+{% extends "base.html" %}
+{% block title %}Editar Veículo{% endblock %}
+{% block content %}
+<h1>Editar Veículo</h1>
+<form method="POST" action="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        <label>ID</label>
+        <input type="text" class="form-control" value="{{ veiculo.id }}" readonly>
+    </div>
+    <div class="form-group">
+        {{ form.id_fornecedor.label }} {{ form.id_fornecedor(class="form-control") }}
+        {% for error in form.id_fornecedor.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.placa.label }} {{ form.placa(class="form-control") }}
+        {% for error in form.placa.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.ativo.label }} {{ form.ativo(class="form-control") }}
+        {% for error in form.ativo.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.status.label }} {{ form.status(class="form-control") }}
+        {% for error in form.status.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        <label>Sequencial</label>
+        <input type="text" class="form-control" value="{{ veiculo.sequencial }}" readonly>
+    </div>
+    <div class="form-group">
+        <label>Foto 1 Atual</label><br>
+        {% if veiculo.foto1 %}
+            <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto1) }}" alt="Foto 1 do veículo" style="max-width: 100px;">
+        {% else %}
+            <p>Sem foto</p>
+        {% endif %}
+    </div>
+    <div class="form-group">
+        {{ form.foto1.label }} {{ form.foto1(class="form-control-file") }}
+        {% for error in form.foto1.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        <label>Foto 2 Atual</label><br>
+        {% if veiculo.foto2 %}
+            <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto2) }}" alt="Foto 2 do veículo" style="max-width: 100px;">
+        {% else %}
+            <p>Sem foto</p>
+        {% endif %}
+    </div>
+    <div class="form-group">
+        {{ form.foto2.label }} {{ form.foto2(class="form-control-file") }}
+        {% for error in form.foto2.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}
