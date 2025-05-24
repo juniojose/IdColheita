@@ -3,6 +3,7 @@ from flask import Flask
 from .config import Config
 from .models.database import init_db
 from .utils.logger import setup_logger
+from .blueprints.fornecedores import fornecedores_bp  # Import do blueprint
 
 logger = setup_logger()
 
@@ -15,9 +16,8 @@ def create_app():
     with app.app_context():
         init_db(app)
 
-    # Registrar blueprints (a serem adicionados nas etapas 8 e 9)
-    # Exemplo: from .routes.fornecedores import fornecedores_bp
-    # app.register_blueprint(fornecedores_bp)
+    # Registrar blueprints
+    app.register_blueprint(fornecedores_bp)
 
     logger.info("Aplicação Flask inicializada com sucesso.")
 

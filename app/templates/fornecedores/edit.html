@@ -1,0 +1,31 @@
+<!-- app/templates/fornecedores/edit.html -->
+{% extends "base.html" %}
+{% block title %}Editar Fornecedor{% endblock %}
+{% block content %}
+<h1>Editar Fornecedor</h1>
+<form method="POST" action="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.id.label }} {{ form.id(class="form-control", readonly=True) }}
+    </div>
+    <div class="form-group">
+        {{ form.nome.label }} {{ form.nome(class="form-control") }}
+        {% for error in form.nome.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.pessoa_de_contato.label }} {{ form.pessoa_de_contato(class="form-control") }}
+        {% for error in form.pessoa_de_contato.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.whatsapp.label }} {{ form.whatsapp(class="form-control") }}
+        {% for error in form.whatsapp.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}

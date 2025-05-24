@@ -1,0 +1,62 @@
+<!-- app/templates/fornecedores/index.html -->
+{% extends "base.html" %}
+{% block title %}Fornecedores{% endblock %}
+{% block content %}
+<h1>Gerenciar Fornecedores</h1>
+<form method="POST" action="{{ url_for('fornecedores.listar_fornecedores') }}">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.id.label }} {{ form.id(class="form-control") }}
+        {% for error in form.id.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.nome.label }} {{ form.nome(class="form-control") }}
+        {% for error in form.nome.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.pessoa_de_contato.label }} {{ form.pessoa_de_contato(class="form-control") }}
+        {% for error in form.pessoa_de_contato.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    <div class="form-group">
+        {{ form.whatsapp.label }} {{ form.whatsapp(class="form-control") }}
+        {% for error in form.whatsapp.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+<h2 class="mt-4">Lista de Fornecedores</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Pessoa de Contato</th>
+            <th>WhatsApp</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for fornecedor in fornecedores %}
+            <tr>
+                <td>{{ fornecedor.id }}</td>
+                <td>{{ fornecedor.nome }}</td>
+                <td>{{ fornecedor.pessoa_de_contato }}</td>
+                <td>{{ fornecedor.whatsapp }}</td>
+                <td>
+                    <a href="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    <form action="{{ url_for('fornecedores.deletar_fornecedor', id=fornecedor.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este fornecedor?');">Deletar</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
