@@ -2,7 +2,7 @@
 import mysql.connector
 from mysql.connector import Error
 from flask import current_app
-from .utils.logger import setup_logger
+from ..utils.logger import setup_logger  # Alterado de .utils.logger para ..utils.logger
 
 logger = setup_logger()
 
