@@ -3,6 +3,7 @@ from flask import render_template, request, redirect, url_for, flash
 from . import fornecedores_bp
 from ...models.fornecedor import Fornecedor
 from .forms import FornecedorForm
+from ...services.id_generator import generate_id
 from ...utils.logger import setup_logger
 
 logger = setup_logger()
@@ -18,8 +19,10 @@ def listar_fornecedores():
     fornecedores = Fornecedor.listar_todos()
     if form.validate_on_submit():
         try:
+            # Gerar ID automaticamente
+            id_fornecedor = generate_id('fornecedores')
             fornecedor = Fornecedor(
-                id=form.id.data,
+                id=id_fornecedor,
                 nome=form.nome.data,
                 pessoa_de_contato=form.pessoa_de_contato.data,
                 whatsapp=form.whatsapp.data
