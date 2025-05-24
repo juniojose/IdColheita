@@ -5,6 +5,7 @@ from ...models.veiculo import Veiculo
 from ...models.fornecedor import Fornecedor
 from .forms import VeiculoForm
 from ...services.id_generator import generate_id
+from ...services.image_generator import generate_vehicle_image
 from ...utils.logger import setup_logger
 import mysql.connector
 import os
@@ -16,6 +17,10 @@ logger = setup_logger()
 def listar_veiculos():
     form = VeiculoForm()
     veiculos = Veiculo.listar_todos()
+    # Buscar nome do fornecedor para cada veículo
+    for veiculo in veiculos:
+        fornecedor = Fornecedor.buscar_por_id(veiculo.id_fornecedor)
+        veiculo.fornecedor_nome = fornecedor.nome if fornecedor else 'Desconhecido'
     if form.validate_on_submit():
         try:
             id_veiculo = generate_id('veiculos')
@@ -50,7 +55,15 @@ def listar_veiculos():
                 foto2=foto2_filename
             )
             veiculo.salvar()
-            flash('Veículo cadastrado com sucesso!', 'success')
+
+            # Gerar imagem do veículo
+            try:
+                image_path = generate_vehicle_image(veiculo)
+                flash(f'Veículo cadastrado e imagem gerada com sucesso em static/{image_path}!', 'success')
+            except Exception as e:
+                flash(f'Veículo cadastrado, mas erro ao gerar imagem: {str(e)}', 'warning')
+                logger.error(f"Erro ao gerar imagem para veículo {id_veiculo}: {str(e)}")
+
             return redirect(url_for('veiculos.listar_veiculos'))
         except Exception as e:
             flash(f'Erro ao cadastrar veículo: {str(e)}', 'danger')

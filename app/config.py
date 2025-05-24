@@ -17,3 +17,4 @@ class Config:
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
     OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER")
     SAFRA = os.getenv("SAFRA")
+    VEICULO_IMAGE_DIR = path.join(os.getenv("OUTPUT_FOLDER"), "veiculos")

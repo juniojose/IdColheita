@@ -43,6 +43,15 @@
     </div>
     {{ form.submit(class="btn btn-primary") }}
 </form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
 <h2 class="mt-4">Lista de Veículos</h2>
 <table class="table table-bordered">
     <thead>
@@ -55,6 +64,7 @@
             <th>Sequencial</th>
             <th>Foto 1</th>
             <th>Foto 2</th>
+            <th>Imagem Gerada</th>
             <th>Ações</th>
         </tr>
     </thead>
@@ -62,9 +72,7 @@
         {% for veiculo in veiculos %}
             <tr>
                 <td>{{ veiculo.id }}</td>
-                <td>
-                    {{ get_fornecedor(veiculo.id_fornecedor).nome if get_fornecedor(veiculo.id_fornecedor) else 'Desconhecido' }}
-                </td>
+                <td>{{ veiculo.fornecedor_nome }}</td> <!-- Usa o fornecedor_nome já preenchido -->
                 <td>{{ veiculo.placa }}</td>
                 <td>{{ veiculo.ativo }}</td>
                 <td>{{ veiculo.status }}</td>
@@ -84,6 +92,11 @@
                     {% endif %}
                 </td>
                 <td>
+                    {% if veiculo.id %}
+                        <a href="{{ url_for('static', filename='output/veiculos/veiculo_' + veiculo.id + '.png') }}" target="_blank">Ver</a>
+                    {% endif %}
+                </td>
+                <td>
                     <a href="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" class="btn btn-sm btn-warning">Editar</a>
                     <form action="{{ url_for('veiculos.deletar_veiculo', id=veiculo.id) }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este veículo?');">Deletar</button>
@@ -94,11 +107,3 @@
     </tbody>
 </table>
 {% endblock %}
-
-{% macro get_fornecedor(id) %}
-    {% for fornecedor in g.fornecedores %}
-        {% if fornecedor.id == id %}
-            {{ fornecedor }}
-        {% endif %}
-    {% endfor %}
-{% endmacro %}
