@@ -1,0 +1,38 @@
+# Arquivos Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Ambiente virtual
+venv/
+.env
+
+# Arquivos de log
+*.log
+
+# Diretórios de upload e saída
+app/static/uploads/*
+app/static/output/*
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE
+.idea/
+.vscode/
+
+# Arquivos de banco de dados
+*.sql
+*.sqlite3
+
+# Arquivos temporários
+*.bak
+*.swp
+*~
+
+# Dependências locais
+*.egg-info/
+dist/
+build/
