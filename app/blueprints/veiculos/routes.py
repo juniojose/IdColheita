@@ -3,17 +3,18 @@ from flask import render_template, request, redirect, url_for, flash, current_ap
 from . import veiculos_bp
 from ...models.veiculo import Veiculo
 from ...models.fornecedor import Fornecedor
-from .forms import VeiculoForm
+from .forms import VeiculoForm, LinkForm
 from ...services.id_generator import generate_id
 from ...services.image_generator import generate_vehicle_image
 from ...utils.logger import setup_logger
 import mysql.connector
 import os
 from werkzeug.utils import secure_filename
+import qrcode
 
 logger = setup_logger()
 
-@veiculos_bp.route('/veiculos', methods=['GET', 'POST'])
+@veiculos_bp.route('/', methods=['GET', 'POST'])
 def listar_veiculos():
     form = VeiculoForm()
     veiculos = Veiculo.listar_todos()
@@ -64,13 +65,56 @@ def listar_veiculos():
                 flash(f'Veículo cadastrado, mas erro ao gerar imagem: {str(e)}', 'warning')
                 logger.error(f"Erro ao gerar imagem para veículo {id_veiculo}: {str(e)}")
 
-            return redirect(url_for('veiculos.listar_veiculos'))
+            # Redirecionar para o formulário de link com o ID do veículo
+            return redirect(url_for('veiculos.gerar_qr_code', id_veiculo=id_veiculo))
         except Exception as e:
             flash(f'Erro ao cadastrar veículo: {str(e)}', 'danger')
             logger.error(f"Erro ao cadastrar veículo: {str(e)}")
     return render_template('veiculos/index.html', form=form, veiculos=veiculos)
 
-@veiculos_bp.route('/veiculos/editar/<string:id>', methods=['GET', 'POST'])
+@veiculos_bp.route('/gerar-qr-code/<string:id_veiculo>', methods=['GET', 'POST'])
+def gerar_qr_code(id_veiculo):
+    veiculo = Veiculo.buscar_por_id(id_veiculo)
+    if not veiculo:
+        flash('Veículo não encontrado!', 'danger')
+        return redirect(url_for('veiculos.listar_veiculos'))
+
+    form = LinkForm()
+    if form.validate_on_submit():
+        try:
+            # Gerar o QR-Code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(form.link.data)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Criar diretório temporário para o QR-Code
+            qr_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'qr_codes')
+            if not os.path.exists(qr_dir):
+                os.makedirs(qr_dir)
+                logger.info(f"Diretório de QR-Codes criado: {qr_dir}")
+
+            # Salvar o QR-Code
+            qr_filename = f"qr_{id_veiculo}.png"
+            qr_path = os.path.join(qr_dir, qr_filename)
+            img.save(qr_path)
+            logger.info(f"QR-Code gerado para veículo {id_veiculo} em {qr_path}")
+
+            # Redirecionar para uma página de impressão (a ser criada na Subetapa 10.4)
+            # Por enquanto, apenas exibir uma mensagem de sucesso
+            flash('QR-Code gerado com sucesso! Pronto para impressão.', 'success')
+            return redirect(url_for('veiculos.listar_veiculos'))
+        except Exception as e:
+            flash(f'Erro ao gerar QR-Code: {str(e)}', 'danger')
+            logger.error(f"Erro ao gerar QR-Code para veículo {id_veiculo}: {str(e)}")
+    return render_template('veiculos/gerar_qr_code.html', form=form, veiculo=veiculo)
+
+@veiculos_bp.route('/editar/<string:id>', methods=['GET', 'POST'])
 def editar_veiculo(id):
     veiculo = Veiculo.buscar_por_id(id)
     if not veiculo:
@@ -110,7 +154,7 @@ def editar_veiculo(id):
             logger.error(f"Erro ao atualizar veículo: {str(e)}")
     return render_template('veiculos/edit.html', form=form, veiculo=veiculo)
 
-@veiculos_bp.route('/veiculos/deletar/<string:id>', methods=['POST'])
+@veiculos_bp.route('/deletar/<string:id>', methods=['POST'])
 def deletar_veiculo(id):
     try:
         veiculo = Veiculo.buscar_por_id(id)

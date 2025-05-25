@@ -1,0 +1,17 @@
+<!-- app/templates/veiculos/gerar_qr_code.html -->
+{% extends "base.html" %}
+{% block title %}Gerar QR-Code{% endblock %}
+{% block content %}
+<h1>Gerar QR-Code para Veículo</h1>
+<p>Veículo: {{ veiculo.placa }} - Ativo: {{ veiculo.ativo }}</p>
+<form method="POST" action="{{ url_for('veiculos.gerar_qr_code', id_veiculo=veiculo.id) }}">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.link.label }} {{ form.link(class="form-control", placeholder="https://exemplo.com") }}
+        {% for error in form.link.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endblock %}

@@ -2,7 +2,7 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Length, Optional, Regexp
+from wtforms.validators import DataRequired, Length, Optional, Regexp, URL
 from ...models.fornecedor import Fornecedor
 
 class VeiculoForm(FlaskForm):
@@ -18,3 +18,7 @@ class VeiculoForm(FlaskForm):
         super(VeiculoForm, self).__init__(*args, **kwargs)
         fornecedores = Fornecedor.listar_todos()
         self.id_fornecedor.choices = [(f.id, f.nome) for f in fornecedores]
+
+class LinkForm(FlaskForm):
+    link = StringField('Link', validators=[DataRequired(), URL(message="Por favor, insira um URL válido (ex.: https://exemplo.com).")])
+    submit = SubmitField('Seguir para Impressão')
