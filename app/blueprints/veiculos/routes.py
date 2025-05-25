@@ -15,6 +15,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import black
+from werkzeug.datastructures import FileStorage  # Importar FileStorage para verificação
 
 logger = setup_logger()
 
@@ -180,14 +181,16 @@ def editar_veiculo(id):
         try:
             foto1_filename = veiculo.foto1
             foto2_filename = veiculo.foto2
-            if form.foto1.data:
+            # Verificar se uma nova foto foi enviada para foto1
+            if form.foto1.data and isinstance(form.foto1.data, FileStorage) and form.foto1.data.filename:
                 foto = form.foto1.data
                 extensao = os.path.splitext(foto.filename)[1].lower()
                 foto1_filename = secure_filename(f"{form.placa.data}_{form.ativo.data}_1{extensao}")
                 upload_path = os.path.join(current_app.config['UPLOAD_FOLDER'], foto1_filename)
                 foto.save(upload_path)
                 logger.info(f"Nova foto 1 salva em {upload_path}")
-            if form.foto2.data:
+            # Verificar se uma nova foto foi enviada para foto2
+            if form.foto2.data and isinstance(form.foto2.data, FileStorage) and form.foto2.data.filename:
                 foto = form.foto2.data
                 extensao = os.path.splitext(foto.filename)[1].lower()
                 foto2_filename = secure_filename(f"{form.placa.data}_{form.ativo.data}_2{extensao}")
@@ -202,7 +205,15 @@ def editar_veiculo(id):
             veiculo.foto1 = foto1_filename
             veiculo.foto2 = foto2_filename
             veiculo.atualizar()
-            flash('Veículo atualizado com sucesso!', 'success')
+
+            # Regenerar a imagem do veículo com os dados atualizados
+            try:
+                image_path = generate_vehicle_image(veiculo)
+                flash(f'Veículo atualizado e imagem gerada com sucesso em static/{image_path}!', 'success')
+            except Exception as e:
+                flash(f'Veículo atualizado, mas erro ao gerar imagem: {str(e)}', 'warning')
+                logger.error(f"Erro ao gerar imagem para veículo {id}: {str(e)}")
+
             return redirect(url_for('veiculos.listar_veiculos'))
         except Exception as e:
             flash(f'Erro ao atualizar veículo: {str(e)}', 'danger')
