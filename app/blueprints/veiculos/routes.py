@@ -11,6 +11,10 @@ import mysql.connector
 import os
 from werkzeug.utils import secure_filename
 import qrcode
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import mm
+from reportlab.lib.utils import ImageReader
+from reportlab.lib.colors import black
 
 logger = setup_logger()
 
@@ -18,7 +22,6 @@ logger = setup_logger()
 def listar_veiculos():
     form = VeiculoForm()
     veiculos = Veiculo.listar_todos()
-    # Buscar nome do fornecedor para cada veículo
     for veiculo in veiculos:
         fornecedor = Fornecedor.buscar_por_id(veiculo.id_fornecedor)
         veiculo.fornecedor_nome = fornecedor.nome if fornecedor else 'Desconhecido'
@@ -27,7 +30,6 @@ def listar_veiculos():
             id_veiculo = generate_id('veiculos')
             sequencial = Veiculo.gerar_sequencial()
 
-            # Processar upload das fotos
             foto1_filename = None
             foto2_filename = None
             if form.foto1.data:
@@ -57,7 +59,6 @@ def listar_veiculos():
             )
             veiculo.salvar()
 
-            # Gerar imagem do veículo
             try:
                 image_path = generate_vehicle_image(veiculo)
                 flash(f'Veículo cadastrado e imagem gerada com sucesso em static/{image_path}!', 'success')
@@ -65,7 +66,6 @@ def listar_veiculos():
                 flash(f'Veículo cadastrado, mas erro ao gerar imagem: {str(e)}', 'warning')
                 logger.error(f"Erro ao gerar imagem para veículo {id_veiculo}: {str(e)}")
 
-            # Redirecionar para o formulário de link com o ID do veículo
             return redirect(url_for('veiculos.gerar_qr_code', id_veiculo=id_veiculo))
         except Exception as e:
             flash(f'Erro ao cadastrar veículo: {str(e)}', 'danger')
@@ -82,7 +82,6 @@ def gerar_qr_code(id_veiculo):
     form = LinkForm()
     if form.validate_on_submit():
         try:
-            # Gerar o QR-Code
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -93,26 +92,82 @@ def gerar_qr_code(id_veiculo):
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
 
-            # Criar diretório temporário para o QR-Code
             qr_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'qr_codes')
-            if not os.path.exists(qr_dir):
-                os.makedirs(qr_dir)
-                logger.info(f"Diretório de QR-Codes criado: {qr_dir}")
-
-            # Salvar o QR-Code
+            os.makedirs(qr_dir, exist_ok=True)
             qr_filename = f"qr_{id_veiculo}.png"
             qr_path = os.path.join(qr_dir, qr_filename)
             img.save(qr_path)
-            logger.info(f"QR-Code gerado para veículo {id_veiculo} em {qr_path}")
+            logger.info(f"QR-Code salvo em {qr_path}")
 
-            # Redirecionar para uma página de impressão (a ser criada na Subetapa 10.4)
-            # Por enquanto, apenas exibir uma mensagem de sucesso
-            flash('QR-Code gerado com sucesso! Pronto para impressão.', 'success')
-            return redirect(url_for('veiculos.listar_veiculos'))
+            pdf_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'pdfs')
+            os.makedirs(pdf_dir, exist_ok=True)
+            pdf_filename = f"id_colheita_{id_veiculo}.pdf"
+            pdf_path = os.path.join(pdf_dir, pdf_filename)
+
+            # Criar o PDF (140x80 mm)
+            c = canvas.Canvas(pdf_path, pagesize=(140 * mm, 80 * mm))
+            width, height = 140 * mm, 80 * mm
+
+            # Definir px_per_mm para conversão
+            px_per_mm = 3.7795  # Aproximadamente 300 DPI
+
+            left_margin = 2 * mm  # Margem à esquerda para o texto
+            qr_margin = 2 * px_per_mm/mm  # Margem de 5 px (~1.32 mm) à direita do QR-Code
+            qr_size = height - 2 * qr_margin  # ~80 mm - 10 px (5 px topo e base)
+
+            # Obter safra corrigida (sem duplicar "SAFRA")
+            safra = current_app.config['SAFRA']
+            safra_text = safra
+
+            # Informações com tamanhos fixos
+            lines = [
+                {"text": safra_text, "size": 30, "bold": True},  # Tamanho fixo de 24 px
+                {"text": veiculo.placa, "size": 30, "bold": True},
+                {"text": veiculo.ativo, "size": 30, "bold": True},
+                {"text": f"{veiculo.sequencial:03d}", "size": 42, "bold": True},  # Tamanho fixo de 42 px
+            ]
+
+            # Definir espaçamento fixo entre linhas
+            #line_spacing = 2 * px_per_mm  # Aproximadamente 10 px de espaçamento
+            line_spacing = -70
+
+            # Posicionar o texto a partir de uma margem fixa do topo
+            start_y = height - 15 * px_per_mm  # Iniciar a 15 px do topo para centralizar visualmente
+
+            current_y = start_y
+            for line in lines:
+                font = "Helvetica-Bold" if line["bold"] else "Helvetica"
+                c.setFont(font, line["size"])
+                c.setFillColor(black)
+                c.drawString(left_margin, current_y, line["text"])
+                current_y -= line["size"] * px_per_mm + line_spacing
+
+            # QR Code à direita
+            qr_image = ImageReader(qr_path)
+            qr_x = width - qr_size - qr_margin
+            qr_y = qr_margin  # Início a 5 px do topo
+            c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
+
+            c.showPage()
+            c.save()
+            logger.info(f"PDF finalizado com layout corrigido: {pdf_path}")
+
+            return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
         except Exception as e:
-            flash(f'Erro ao gerar QR-Code: {str(e)}', 'danger')
-            logger.error(f"Erro ao gerar QR-Code para veículo {id_veiculo}: {str(e)}")
+            flash(f'Erro ao gerar QR-Code ou PDF: {str(e)}', 'danger')
+            logger.error(f"Erro ao gerar QR-Code ou PDF: {str(e)}")
     return render_template('veiculos/gerar_qr_code.html', form=form, veiculo=veiculo)
+
+@veiculos_bp.route('/imprimir/<string:id_veiculo>')
+def imprimir_id_colheita(id_veiculo):
+    veiculo = Veiculo.buscar_por_id(id_veiculo)
+    if not veiculo:
+        flash('Veículo não encontrado!', 'danger')
+        return redirect(url_for('veiculos.listar_veiculos'))
+
+    pdf_filename = f"id_colheita_{id_veiculo}.pdf"
+    pdf_relative_path = os.path.join('output/veiculos/pdfs', pdf_filename).replace('\\', '/')
+    return render_template('veiculos/imprimir.html', veiculo=veiculo, pdf_path=pdf_relative_path)
 
 @veiculos_bp.route('/editar/<string:id>', methods=['GET', 'POST'])
 def editar_veiculo(id):
