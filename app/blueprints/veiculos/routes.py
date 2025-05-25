@@ -149,9 +149,23 @@ def gerar_qr_code(id_veiculo):
             qr_y = qr_margin  # Início a 5 px do topo
             c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
 
+            # Adicionar borda pontilhada ao redor da página
+            border_margin = 1 * mm  # Margem interna de 1 mm
+            c.setLineWidth(0.5)  # Linha fina de 0.5 pontos
+            c.setDash(2, 2)  # Estilo pontilhado (2 pontos de traço, 2 pontos de espaço)
+            c.setStrokeColor(black)  # Cor da borda
+            # Linha superior
+            c.line(border_margin, height - border_margin, width - border_margin, height - border_margin)
+            # Linha inferior
+            c.line(border_margin, border_margin, width - border_margin, border_margin)
+            # Linha esquerda
+            c.line(border_margin, border_margin, border_margin, height - border_margin)
+            # Linha direita
+            c.line(width - border_margin, border_margin, width - border_margin, height - border_margin)
+
             c.showPage()
             c.save()
-            logger.info(f"PDF finalizado com layout corrigido: {pdf_path}")
+            logger.info(f"PDF finalizado com layout corrigido e borda pontilhada: {pdf_path}")
 
             return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
         except Exception as e:
