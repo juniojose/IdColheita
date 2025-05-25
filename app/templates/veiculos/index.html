@@ -53,57 +53,43 @@
 {% endwith %}
 
 <h2 class="mt-4">Lista de Veículos</h2>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Fornecedor</th>
-            <th>Placa</th>
-            <th>Ativo</th>
-            <th>Status</th>
-            <th>Sequencial</th>
-            <th>Foto 1</th>
-            <th>Foto 2</th>
-            <th>Imagem Gerada</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for veiculo in veiculos %}
-            <tr>
-                <td>{{ veiculo.id }}</td>
-                <td>{{ veiculo.fornecedor_nome }}</td>
-                <td>{{ veiculo.placa }}</td>
-                <td>{{ veiculo.ativo }}</td>
-                <td>{{ veiculo.status }}</td>
-                <td>{{ veiculo.sequencial }}</td>
-                <td>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for veiculo in veiculos %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ veiculo.placa }}</h5>
+                <p class="card-text">
+                    <strong>ID:</strong> {{ veiculo.id }}<br>
+                    <strong>Fornecedor:</strong> {{ veiculo.fornecedor_nome }}<br>
+                    <strong>Ativo:</strong> {{ veiculo.ativo }}<br>
+                    <strong>Status:</strong> {{ veiculo.status }}<br>
+                    <strong>Sequencial:</strong> {{ veiculo.sequencial }}
+                </p>
+                {% if veiculo.foto1 or veiculo.foto2 %}
+                <div class="d-flex flex-wrap justify-content-center">
                     {% if veiculo.foto1 %}
-                        <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto1) }}" alt="Foto 1 do veículo" style="max-width: 100px;">
-                    {% else %}
-                        Sem foto
+                    <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto1) }}" alt="Foto 1 do veículo" class="img-thumbnail m-1" style="max-width: 100px;">
                     {% endif %}
-                </td>
-                <td>
                     {% if veiculo.foto2 %}
-                        <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto2) }}" alt="Foto 2 do veículo" style="max-width: 100px;">
-                    {% else %}
-                        Sem foto
+                    <img src="{{ url_for('static', filename='uploads/veiculos/' + veiculo.foto2) }}" alt="Foto 2 do veículo" class="img-thumbnail m-1" style="max-width: 100px;">
                     {% endif %}
-                </td>
-                <td>
-                    {% if veiculo.id %}
-                        <a href="{{ url_for('static', filename='output/veiculos/veiculo_' + veiculo.id + '.png') }}" target="_blank">Ver</a>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" class="btn btn-sm btn-primary">Editar</a>
-                    <form action="{{ url_for('veiculos.deletar_veiculo', id=veiculo.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este veículo?');">Deletar</button>
-                    </form>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                </div>
+                {% endif %}
+                {% if veiculo.id %}
+                <p class="mt-2">
+                    <a href="{{ url_for('static', filename='output/veiculos/veiculo_' + veiculo.id + '.png') }}" target="_blank" class="btn btn-sm btn-secondary">Ver Imagem</a>
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" class="btn btn-sm btn-primary me-2">Editar</a>
+                <form action="{{ url_for('veiculos.deletar_veiculo', id=veiculo.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este veículo?');">Deletar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}

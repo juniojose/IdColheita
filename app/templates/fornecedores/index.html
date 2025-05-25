@@ -26,31 +26,26 @@
     {{ form.submit(class="btn btn-primary") }}
 </form>
 <h2 class="mt-4">Lista de Fornecedores</h2>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Pessoa de Contato</th>
-            <th>WhatsApp</th>
-            <th>Ações</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for fornecedor in fornecedores %}
-            <tr>
-                <td>{{ fornecedor.id }}</td>
-                <td>{{ fornecedor.nome }}</td>
-                <td>{{ fornecedor.pessoa_de_contato }}</td>
-                <td>{{ fornecedor.whatsapp }}</td>
-                <td>
-                    <a href="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}" class="btn btn-sm btn-primary">Editar</a>
-                    <form action="{{ url_for('fornecedores.deletar_fornecedor', id=fornecedor.id) }}" method="POST" style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este fornecedor?');">Deletar</button>
-                    </form>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    {% for fornecedor in fornecedores %}
+    <div class="col">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ fornecedor.nome }}</h5>
+                <p class="card-text">
+                    <strong>ID:</strong> {{ fornecedor.id }}<br>
+                    <strong>Pessoa de Contato:</strong> {{ fornecedor.pessoa_de_contato }}<br>
+                    <strong>WhatsApp:</strong> {{ fornecedor.whatsapp }}
+                </p>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}" class="btn btn-sm btn-primary me-2">Editar</a>
+                <form action="{{ url_for('fornecedores.deletar_fornecedor', id=fornecedor.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este fornecedor?');">Deletar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}
