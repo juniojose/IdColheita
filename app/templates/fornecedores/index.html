@@ -44,7 +44,7 @@
                 <td>{{ fornecedor.pessoa_de_contato }}</td>
                 <td>{{ fornecedor.whatsapp }}</td>
                 <td>
-                    <a href="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{{ url_for('fornecedores.editar_fornecedor', id=fornecedor.id) }}" class="btn btn-sm btn-primary">Editar</a>
                     <form action="{{ url_for('fornecedores.deletar_fornecedor', id=fornecedor.id) }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este fornecedor?');">Deletar</button>
                     </form>

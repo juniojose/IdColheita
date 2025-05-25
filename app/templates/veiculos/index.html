@@ -97,7 +97,7 @@
                     {% endif %}
                 </td>
                 <td>
-                    <a href="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{{ url_for('veiculos.editar_veiculo', id=veiculo.id) }}" class="btn btn-sm btn-primary">Editar</a>
                     <form action="{{ url_for('veiculos.deletar_veiculo', id=veiculo.id) }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Tem certeza que deseja deletar este veículo?');">Deletar</button>
                     </form>
