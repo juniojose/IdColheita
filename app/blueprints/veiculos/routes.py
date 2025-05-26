@@ -12,6 +12,7 @@ from werkzeug.utils import secure_filename
 import qrcode
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import mm
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import black
 from werkzeug.datastructures import FileStorage  # Importar FileStorage para verificação
@@ -104,37 +105,39 @@ def gerar_qr_code(id_veiculo):
             pdf_filename = f"id_colheita_{id_veiculo}.pdf"
             pdf_path = os.path.join(pdf_dir, pdf_filename)
 
-            # Criar o PDF (140x80 mm)
-            c = canvas.Canvas(pdf_path, pagesize=(140 * mm, 80 * mm))
-            width, height = 140 * mm, 80 * mm
+            # Criar o PDF em formato A4
+            c = canvas.Canvas(pdf_path, pagesize=A4)
+            page_width, page_height = A4
 
-            # Definir px_per_mm para conversão
-            px_per_mm = 3.7795  # Aproximadamente 300 DPI
+            # Dimensões da área de impressão
+            area_width, area_height = 140 * mm, 80 * mm
 
-            left_margin = 2 * mm  # Margem à esquerda para o texto
-            qr_margin = 2 * px_per_mm/mm  # Margem de 5 px (~1.32 mm) à direita do QR-Code
-            qr_size = height - 2 * qr_margin  # ~80 mm - 10 px (5 px topo e base)
+            # Margens de 20px convertidas para mm (~5.29 mm)
+            px_per_mm = 3.7795
+            margin_mm = 20 / px_per_mm  # ≈ 5.29 mm
+            x_offset = margin_mm * mm
+            y_offset = page_height - area_height - margin_mm * mm
 
-            # Obter safra corrigida (sem duplicar "SAFRA")
+            left_margin = x_offset + 2 * mm  # Margem interna à esquerda da área
+            qr_margin = 2 * px_per_mm / mm
+            qr_size = area_height - 2 * qr_margin * mm
+
+            # Obter safra
             safra = current_app.config['SAFRA']
             safra_text = safra
 
-            # Informações com tamanhos fixos
+            # Informações
             lines = [
-                {"text": safra_text, "size": 30, "bold": True},  # Tamanho fixo de 24 px
+                {"text": safra_text, "size": 30, "bold": True},
                 {"text": veiculo.placa, "size": 30, "bold": True},
                 {"text": veiculo.ativo, "size": 30, "bold": True},
-                {"text": f"{veiculo.sequencial:03d}", "size": 42, "bold": True},  # Tamanho fixo de 42 px
+                {"text": f"{veiculo.sequencial:03d}", "size": 42, "bold": True},
             ]
 
-            # Definir espaçamento fixo entre linhas
-            #line_spacing = 2 * px_per_mm  # Aproximadamente 10 px de espaçamento
             line_spacing = -70
-
-            # Posicionar o texto a partir de uma margem fixa do topo
-            start_y = height - 15 * px_per_mm  # Iniciar a 15 px do topo para centralizar visualmente
-
+            start_y = y_offset + area_height - 15 * px_per_mm
             current_y = start_y
+
             for line in lines:
                 font = "Helvetica-Bold" if line["bold"] else "Helvetica"
                 c.setFont(font, line["size"])
@@ -142,29 +145,23 @@ def gerar_qr_code(id_veiculo):
                 c.drawString(left_margin, current_y, line["text"])
                 current_y -= line["size"] * px_per_mm + line_spacing
 
-            # QR Code à direita
+            # QR Code
             qr_image = ImageReader(qr_path)
-            qr_x = width - qr_size - qr_margin
-            qr_y = qr_margin  # Início a 5 px do topo
+            qr_x = x_offset + area_width - qr_size - qr_margin * mm
+            qr_y = y_offset + qr_margin * mm
             c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
 
-            # Adicionar borda pontilhada ao redor da página
-            border_margin = 1 * mm  # Margem interna de 1 mm
-            c.setLineWidth(0.5)  # Linha fina de 0.5 pontos
-            c.setDash(2, 2)  # Estilo pontilhado (2 pontos de traço, 2 pontos de espaço)
-            c.setStrokeColor(black)  # Cor da borda
-            # Linha superior
-            c.line(border_margin, height - border_margin, width - border_margin, height - border_margin)
-            # Linha inferior
-            c.line(border_margin, border_margin, width - border_margin, border_margin)
-            # Linha esquerda
-            c.line(border_margin, border_margin, border_margin, height - border_margin)
-            # Linha direita
-            c.line(width - border_margin, border_margin, width - border_margin, height - border_margin)
+            # Borda pontilhada
+            border_margin = 1 * mm
+            c.setLineWidth(0.5)
+            c.setDash(2, 2)
+            c.setStrokeColor(black)
+            c.rect(x_offset + border_margin, y_offset + border_margin,
+                area_width - 2 * border_margin, area_height - 2 * border_margin)
 
             c.showPage()
             c.save()
-            logger.info(f"PDF finalizado com layout corrigido e borda pontilhada: {pdf_path}")
+            logger.info(f"PDF finalizado no formato A4 com área de 140x80 mm e margem de 20px: {pdf_path}")
 
             return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
         except Exception as e:
