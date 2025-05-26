@@ -7,7 +7,6 @@ from .forms import VeiculoForm, LinkForm
 from ...services.id_generator import generate_id
 from ...services.image_generator import generate_vehicle_image
 from ...utils.logger import setup_logger
-import mysql.connector
 import os
 from werkzeug.utils import secure_filename
 import qrcode

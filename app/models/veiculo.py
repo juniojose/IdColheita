@@ -17,11 +17,12 @@ class Veiculo:
 
     def salvar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
             query = """
                 INSERT INTO veiculos (id, id_fornecedor, placa, ativo, status, sequencial, foto1, foto2)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
             cursor.execute(query, (self.id, self.id_fornecedor, self.placa, self.ativo, self.status, self.sequencial, self.foto1, self.foto2))
             connection.commit()
@@ -30,17 +31,19 @@ class Veiculo:
             logger.error(f"Erro ao salvar veículo {self.id}: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()
 
     def atualizar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
             query = """
                 UPDATE veiculos
-                SET id_fornecedor = %s, placa = %s, ativo = %s, status = %s, sequencial = %s, foto1 = %s, foto2 = %s
-                WHERE id = %s
+                SET id_fornecedor = ?, placa = ?, ativo = ?, status = ?, sequencial = ?, foto1 = ?, foto2 = ?
+                WHERE id = ?
             """
             cursor.execute(query, (self.id_fornecedor, self.placa, self.ativo, self.status, self.sequencial, self.foto1, self.foto2, self.id))
             connection.commit()
@@ -49,14 +52,16 @@ class Veiculo:
             logger.error(f"Erro ao atualizar veículo {self.id}: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()
 
     def deletar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
-            query = "DELETE FROM veiculos WHERE id = %s"
+            query = "DELETE FROM veiculos WHERE id = ?"
             cursor.execute(query, (self.id,))
             connection.commit()
             logger.info(f"Veículo {self.id} deletado com sucesso.")
@@ -64,45 +69,51 @@ class Veiculo:
             logger.error(f"Erro ao deletar veículo {self.id}: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()
 
     @staticmethod
     def listar_todos():
         connection = get_db_connection()
+        cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             cursor.execute("SELECT * FROM veiculos")
             veiculos = cursor.fetchall()
-            return [Veiculo(**v) for v in veiculos]
+            return [Veiculo(**dict(v)) for v in veiculos]
         except Exception as e:
             logger.error(f"Erro ao listar veículos: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()
 
     @staticmethod
     def buscar_por_id(id):
         connection = get_db_connection()
+        cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM veiculos WHERE id = %s", (id,))
+            cursor = connection.cursor()
+            cursor.execute("SELECT * FROM veiculos WHERE id = ?", (id,))
             veiculo = cursor.fetchone()
             if veiculo:
-                return Veiculo(**veiculo)
+                return Veiculo(**dict(veiculo))
             return None
         except Exception as e:
             logger.error(f"Erro ao buscar veículo {id}: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()
 
     @staticmethod
     def gerar_sequencial():
         """Gera o próximo número sequencial (1 a 999) com base no maior valor existente."""
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
             cursor.execute("SELECT MAX(sequencial) FROM veiculos")
@@ -114,5 +125,6 @@ class Veiculo:
             logger.error(f"Erro ao gerar sequencial: {str(e)}")
             raise
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             connection.close()

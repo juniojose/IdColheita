@@ -24,7 +24,7 @@ def generate_id(table_name, date=None):
         cursor = connection.cursor()
         
         # Buscar IDs existentes com o mesmo prefixo
-        query = f"SELECT id FROM {table_name} WHERE id LIKE %s"
+        query = f"SELECT id FROM {table_name} WHERE id LIKE ?"
         cursor.execute(query, (f"{prefix}%",))
         existing_ids = {row[0] for row in cursor.fetchall()}
         

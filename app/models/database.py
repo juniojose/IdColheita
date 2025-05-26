@@ -1,65 +1,56 @@
 # app/models/database.py
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 from flask import current_app
-from ..utils.logger import setup_logger  # Alterado de .utils.logger para ..utils.logger
+from ..utils.logger import setup_logger
 
 logger = setup_logger()
 
 def get_db_connection():
-    """Estabelece conexão com o banco de dados MySQL."""
+    """Estabelece conexão com o banco de dados SQLite."""
     try:
-        connection = mysql.connector.connect(
-            host=current_app.config["MYSQL_HOST"],
-            user=current_app.config["MYSQL_USER"],
-            password=current_app.config["MYSQL_PASSWORD"],
-            database=current_app.config["MYSQL_DB"]
-        )
-        if connection.is_connected():
-            logger.info("Conexão com o banco de dados estabelecida.")
-            return connection
-    except Error as e:
-        logger.error(f"Erro ao conectar ao banco de dados: {str(e)}")
+        db_path = current_app.config["DATABASE_PATH"]
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row  # Retornar como dicionário
+        logger.info("Conexão SQLite estabelecida.")
+        return conn
+    except Exception as e:
+        logger.error(f"Erro ao conectar ao SQLite: {str(e)}")
         raise
 
 def init_db(app):
-    """Inicializa o banco de dados e cria as tabelas necessárias."""
+    """Inicializa o banco de dados SQLite e cria as tabelas necessárias."""
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
 
-        # Criação da tabela fornecedores
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS fornecedores (
-                id VARCHAR(15) PRIMARY KEY,
-                nome VARCHAR(255) NOT NULL,
-                pessoa_de_contato VARCHAR(255),
-                whatsapp VARCHAR(20)
+                id TEXT PRIMARY KEY,
+                nome TEXT NOT NULL,
+                pessoa_de_contato TEXT,
+                whatsapp TEXT
             )
         """)
 
-        # Criação da tabela veiculos
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS veiculos (
-                id VARCHAR(15) PRIMARY KEY,
-                id_fornecedor VARCHAR(15) NOT NULL,
-                placa VARCHAR(7) NOT NULL,
-                ativo VARCHAR(6) NOT NULL,
-                status ENUM('ok', 'bloqueado', 'desligado') NOT NULL,
-                sequencial INT NOT NULL,
-                foto1 VARCHAR(255),
-                foto2 VARCHAR(255),
+                id TEXT PRIMARY KEY,
+                id_fornecedor TEXT NOT NULL,
+                placa TEXT NOT NULL,
+                ativo TEXT NOT NULL,
+                status TEXT NOT NULL CHECK(status IN ('ok', 'bloqueado', 'desligado')),
+                sequencial INTEGER NOT NULL,
+                foto1 TEXT,
+                foto2 TEXT,
                 FOREIGN KEY (id_fornecedor) REFERENCES fornecedores(id)
             )
         """)
 
         connection.commit()
-        logger.info("Tabelas do banco de dados criadas com sucesso.")
-    except Error as e:
-        logger.error(f"Erro ao inicializar o banco de dados: {str(e)}")
+        logger.info("Tabelas criadas no SQLite com sucesso.")
+    except Exception as e:
+        logger.error(f"Erro ao inicializar SQLite: {str(e)}")
         raise
     finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
-            logger.info("Conexão com o banco de dados fechada.")
+        connection.close()
+        logger.info("Conexão SQLite encerrada.")

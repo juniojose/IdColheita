@@ -13,11 +13,12 @@ class Fornecedor:
 
     def salvar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
             query = """
                 INSERT INTO fornecedores (id, nome, pessoa_de_contato, whatsapp)
-                VALUES (%s, %s, %s, %s)
+                VALUES (?, ?, ?, ?)
             """
             cursor.execute(query, (self.id, self.nome, self.pessoa_de_contato, self.whatsapp))
             connection.commit()
@@ -31,12 +32,13 @@ class Fornecedor:
 
     def atualizar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
             query = """
                 UPDATE fornecedores
-                SET nome = %s, pessoa_de_contato = %s, whatsapp = %s
-                WHERE id = %s
+                SET nome = ?, pessoa_de_contato = ?, whatsapp = ?
+                WHERE id = ?
             """
             cursor.execute(query, (self.nome, self.pessoa_de_contato, self.whatsapp, self.id))
             connection.commit()
@@ -50,9 +52,10 @@ class Fornecedor:
 
     def deletar(self):
         connection = get_db_connection()
+        cursor = None
         try:
             cursor = connection.cursor()
-            query = "DELETE FROM fornecedores WHERE id = %s"
+            query = "DELETE FROM fornecedores WHERE id = ?"
             cursor.execute(query, (self.id,))
             connection.commit()
             logger.info(f"Fornecedor {self.id} deletado com sucesso.")
@@ -66,8 +69,9 @@ class Fornecedor:
     @staticmethod
     def listar_todos():
         connection = get_db_connection()
+        cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
+            cursor = connection.cursor()
             cursor.execute("SELECT * FROM fornecedores")
             fornecedores = cursor.fetchall()
             return [Fornecedor(**f) for f in fornecedores]
@@ -81,9 +85,10 @@ class Fornecedor:
     @staticmethod
     def buscar_por_id(id):
         connection = get_db_connection()
+        cursor = None
         try:
-            cursor = connection.cursor(dictionary=True)
-            cursor.execute("SELECT * FROM fornecedores WHERE id = %s", (id,))
+            cursor = connection.cursor()
+            cursor.execute("SELECT * FROM fornecedores WHERE id = ?", (id,))
             fornecedor = cursor.fetchone()
             if fornecedor:
                 return Fornecedor(**fornecedor)

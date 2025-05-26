@@ -10,11 +10,13 @@ load_dotenv(path.join(basedir, "../.env"))
 class Config:
     """Configurações da aplicação Flask."""
     SECRET_KEY = os.getenv("SECRET_KEY")
-    MYSQL_HOST = os.getenv("MYSQL_HOST")
-    MYSQL_USER = os.getenv("MYSQL_USER")
-    MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
-    MYSQL_DB = os.getenv("MYSQL_DB")
+    DATABASE_PATH = os.path.join(basedir, "../app.sqlite3")
     UPLOAD_FOLDER = os.getenv("UPLOAD_FOLDER")
-    OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER")
     SAFRA = os.getenv("SAFRA")
+
+    # Verificar se OUTPUT_FOLDER está definido
+    OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER")
+    if not OUTPUT_FOLDER:
+        raise ValueError("A variável de ambiente OUTPUT_FOLDER não está definida no .env")
+
     VEICULO_IMAGE_DIR = path.join(os.getenv("OUTPUT_FOLDER"), "veiculos")
