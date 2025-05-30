@@ -1,6 +1,7 @@
 # app/services/image_generator.py
 from PIL import Image, ImageDraw, ImageFont
 import os
+import shutil  # Adicionado para copiar a imagem
 from flask import current_app
 from ..utils.logger import setup_logger
 from ..models.fornecedor import Fornecedor
@@ -29,6 +30,8 @@ def generate_vehicle_image(vehicle):
             raise ValueError("UPLOAD_FOLDER não configurado")
         if not current_app.config.get('SAFRA'):
             raise ValueError("SAFRA não configurado")
+        if not current_app.config.get('SHARE_IMAGE_DIR'):
+            raise ValueError("SHARE_IMAGE_DIR não configurado")
 
         # Configurações da imagem (9:16, 1080x1920)
         width, height = 1080, 1920
@@ -141,6 +144,20 @@ def generate_vehicle_image(vehicle):
         output_path = os.path.join(output_dir, filename)
         image.save(output_path, 'PNG')
         logger.info(f"Imagem gerada para veículo {vehicle.id} em {output_path}")
+
+        # Copiar a imagem para SHARE_IMAGE_DIR
+        try:
+            share_dir = current_app.config['SHARE_IMAGE_DIR']
+            if not os.path.exists(share_dir):
+                os.makedirs(share_dir, exist_ok=True)
+                logger.info(f"Diretório de compartilhamento criado: {share_dir}")
+
+            share_path = os.path.join(share_dir, filename)
+            shutil.copy2(output_path, share_path)
+            logger.info(f"Imagem copiada para {share_path}")
+        except Exception as e:
+            logger.error(f"Erro ao copiar imagem para {share_dir}: {str(e)}")
+            raise
 
         # Retornar caminho relativo para uso em templates ou mensagens
         relative_path = os.path.join('output/veiculos', filename).replace('\\', '/')
