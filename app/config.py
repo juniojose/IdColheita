@@ -19,4 +19,12 @@ class Config:
     if not OUTPUT_FOLDER:
         raise ValueError("A variável de ambiente OUTPUT_FOLDER não está definida no .env")
 
-    VEICULO_IMAGE_DIR = path.join(os.getenv("OUTPUT_FOLDER"), "veiculos")
+    # Usar diretamente o valor de VEICULO_IMAGE_DIR do .env
+    VEICULO_IMAGE_DIR = os.getenv("VEICULO_IMAGE_DIR")
+    if not VEICULO_IMAGE_DIR:
+        raise ValueError("A variável de ambiente VEICULO_IMAGE_DIR não está definida no .env")
+
+    # Adicionar SHARE_IMAGE_DIR do .env
+    SHARE_IMAGE_DIR = os.getenv("SHARE_IMAGE_DIR")
+    if not SHARE_IMAGE_DIR:
+        raise ValueError("A variável de ambiente SHARE_IMAGE_DIR não está definida no .env")

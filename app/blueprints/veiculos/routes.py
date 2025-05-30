@@ -8,6 +8,7 @@ from ...services.id_generator import generate_id
 from ...services.image_generator import generate_vehicle_image
 from ...utils.logger import setup_logger
 import os
+import shutil  # Adicionado para copiar o PDF
 from werkzeug.utils import secure_filename
 import qrcode
 from reportlab.pdfgen import canvas
@@ -157,11 +158,28 @@ def gerar_qr_code(id_veiculo):
             c.setDash(2, 2)
             c.setStrokeColor(black)
             c.rect(x_offset + border_margin, y_offset + border_margin,
-                area_width - 2 * border_margin, area_height - 2 * border_margin)
+                   area_width - 2 * border_margin, area_height - 2 * border_margin)
 
             c.showPage()
             c.save()
             logger.info(f"PDF finalizado no formato A4 com área de 140x80 mm e margem de 20px: {pdf_path}")
+
+            # Copiar o PDF para SHARE_IMAGE_DIR com tratamento de erro
+            try:
+                share_dir = current_app.config['SHARE_IMAGE_DIR']
+                if not share_dir:
+                    raise ValueError("SHARE_IMAGE_DIR não está definido no current_app.config")
+                if not os.path.exists(share_dir):
+                    os.makedirs(share_dir)
+                    logger.info(f"Diretório de compartilhamento criado: {share_dir}")
+
+                share_path = os.path.join(share_dir, pdf_filename)
+                shutil.copy2(pdf_path, share_path)
+                logger.info(f"PDF copiado para {share_path}")
+            except Exception as e:
+                logger.error(f"Erro ao copiar PDF para {share_dir}: {str(e)}")
+                flash(f'Erro ao copiar PDF para compartilhamento: {str(e)}', 'danger')
+                raise
 
             return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
         except Exception as e:
