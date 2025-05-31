@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, url_for, flash, current_ap
 from . import veiculos_bp
 from ...models.veiculo import Veiculo
 from ...models.fornecedor import Fornecedor
-from .forms import VeiculoForm, LinkForm
+from .forms import VeiculoForm  # Removido LinkForm, pois não é mais necessário
 from ...services.id_generator import generate_id
 from ...services.image_generator import generate_vehicle_image
 from ...utils.logger import setup_logger
@@ -74,102 +74,105 @@ def listar_veiculos():
             logger.error(f"Erro ao cadastrar veículo: {str(e)}")
     return render_template('veiculos/index.html', form=form, veiculos=veiculos)
 
-@veiculos_bp.route('/gerar-qr-code/<string:id_veiculo>', methods=['GET', 'POST'])
+@veiculos_bp.route('/gerar-qr-code/<string:id_veiculo>')
 def gerar_qr_code(id_veiculo):
     veiculo = Veiculo.buscar_por_id(id_veiculo)
     if not veiculo:
         flash('Veículo não encontrado!', 'danger')
         return redirect(url_for('veiculos.listar_veiculos'))
 
-    form = LinkForm()
-    if form.validate_on_submit():
-        try:
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
-                box_size=10,
-                border=4,
-            )
-            qr.add_data(form.link.data)
-            qr.make(fit=True)
-            img = qr.make_image(fill_color="black", back_color="white")
+    try:
+        # Gerar link dinâmico
+        primeira_parte_link = "https://gruposlc.sharepoint.com/sites/FazendaPamplona2/Comum/Forms/AllItems.aspx?viewid=590c476b%2D02f7%2D47d5%2Da27c%2Dc0a689496f9d&id=%2Fsites%2FFazendaPamplona2%2FComum%2FIdColheita2025%2D26%2F"
+        id_veiculo_str = f"veiculo_{veiculo.id}.png"
+        segunda_parte_link = "&parent=%2Fsites%2FFazendaPamplona2%2FComum%2FIdColheita2025%2D26"
+        link_completo = f"{primeira_parte_link}{id_veiculo_str}{segunda_parte_link}"
 
-            qr_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'qr_codes')
-            os.makedirs(qr_dir, exist_ok=True)
-            qr_filename = f"qr_{id_veiculo}.png"
-            qr_path = os.path.join(qr_dir, qr_filename)
-            img.save(qr_path)
-            logger.info(f"QR-Code salvo em {qr_path}")
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(link_completo)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
 
-            pdf_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'pdfs')
-            os.makedirs(pdf_dir, exist_ok=True)
-            pdf_filename = f"id_colheita_{id_veiculo}.pdf"
-            pdf_path = os.path.join(pdf_dir, pdf_filename)
+        qr_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'qr_codes')
+        os.makedirs(qr_dir, exist_ok=True)
+        qr_filename = f"qr_{id_veiculo}.png"
+        qr_path = os.path.join(qr_dir, qr_filename)
+        img.save(qr_path)
+        logger.info(f"QR-Code salvo em {qr_path}")
 
-            # Criar o PDF em formato A4
-            c = canvas.Canvas(pdf_path, pagesize=A4)
-            page_width, page_height = A4
+        pdf_dir = os.path.join(current_app.config['VEICULO_IMAGE_DIR'], 'pdfs')
+        os.makedirs(pdf_dir, exist_ok=True)
+        pdf_filename = f"id_colheita_{id_veiculo}.pdf"
+        pdf_path = os.path.join(pdf_dir, pdf_filename)
 
-            # Dimensões da área de impressão
-            area_width, area_height = 140 * mm, 80 * mm
+        # Criar o PDF em formato A4
+        c = canvas.Canvas(pdf_path, pagesize=A4)
+        page_width, page_height = A4
 
-            # Margens de 20px convertidas para mm (~5.29 mm)
-            px_per_mm = 3.7795
-            margin_mm = 20 / px_per_mm  # ≈ 5.29 mm
-            x_offset = margin_mm * mm
-            y_offset = page_height - area_height - margin_mm * mm
+        # Dimensões da área de impressão
+        area_width, area_height = 140 * mm, 80 * mm
 
-            left_margin = x_offset + 2 * mm  # Margem interna à esquerda da área
-            qr_margin = 2 * px_per_mm / mm
-            qr_size = area_height - 2 * qr_margin * mm
+        # Margens de 20px convertidas para mm (~5.29 mm)
+        px_per_mm = 3.7795
+        margin_mm = 20 / px_per_mm  # ≈ 5.29 mm
+        x_offset = margin_mm * mm
+        y_offset = page_height - area_height - margin_mm * mm
 
-            # Obter safra
-            safra = current_app.config['SAFRA']
-            safra_text = safra
+        left_margin = x_offset + 2 * mm  # Margem interna à esquerda da área
+        qr_margin = 2 * px_per_mm / mm
+        qr_size = area_height - 2 * qr_margin * mm
 
-            # Informações
-            lines = [
-                {"text": safra_text, "size": 30, "bold": True},
-                {"text": veiculo.placa, "size": 30, "bold": True},
-                {"text": veiculo.ativo, "size": 30, "bold": True},
-                {"text": f"{veiculo.sequencial:03d}", "size": 42, "bold": True},
-            ]
+        # Obter safra
+        safra = current_app.config['SAFRA']
+        safra_text = safra
 
-            line_spacing = -70
-            start_y = y_offset + area_height - 15 * px_per_mm
-            current_y = start_y
+        # Informações
+        lines = [
+            {"text": safra_text, "size": 30, "bold": True},
+            {"text": veiculo.placa, "size": 30, "bold": True},
+            {"text": veiculo.ativo, "size": 30, "bold": True},
+            {"text": f"{veiculo.sequencial:03d}", "size": 42, "bold": True},
+        ]
 
-            for line in lines:
-                font = "Helvetica-Bold" if line["bold"] else "Helvetica"
-                c.setFont(font, line["size"])
-                c.setFillColor(black)
-                c.drawString(left_margin, current_y, line["text"])
-                current_y -= line["size"] * px_per_mm + line_spacing
+        line_spacing = -70
+        start_y = y_offset + area_height - 15 * px_per_mm
+        current_y = start_y
 
-            # QR Code
-            qr_image = ImageReader(qr_path)
-            qr_x = x_offset + area_width - qr_size - qr_margin * mm
-            qr_y = y_offset + qr_margin * mm
-            c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
+        for line in lines:
+            font = "Helvetica-Bold" if line["bold"] else "Helvetica"
+            c.setFont(font, line["size"])
+            c.setFillColor(black)
+            c.drawString(left_margin, current_y, line["text"])
+            current_y -= line["size"] * px_per_mm + line_spacing
 
-            # Borda pontilhada
-            border_margin = 1 * mm
-            c.setLineWidth(0.5)
-            c.setDash(2, 2)
-            c.setStrokeColor(black)
-            c.rect(x_offset + border_margin, y_offset + border_margin,
-                   area_width - 2 * border_margin, area_height - 2 * border_margin)
+        # QR Code
+        qr_image = ImageReader(qr_path)
+        qr_x = x_offset + area_width - qr_size - qr_margin * mm
+        qr_y = y_offset + qr_margin * mm
+        c.drawImage(qr_image, qr_x, qr_y, width=qr_size, height=qr_size)
 
-            c.showPage()
-            c.save()
-            logger.info(f"PDF finalizado no formato A4 com área de 140x80 mm e margem de 20px: {pdf_path}")
+        # Borda pontilhada
+        border_margin = 1 * mm
+        c.setLineWidth(0.5)
+        c.setDash(2, 2)
+        c.setStrokeColor(black)
+        c.rect(x_offset + border_margin, y_offset + border_margin,
+               area_width - 2 * border_margin, area_height - 2 * border_margin)
 
-            return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
-        except Exception as e:
-            flash(f'Erro ao gerar QR-Code ou PDF: {str(e)}', 'danger')
-            logger.error(f"Erro ao gerar QR-Code ou PDF: {str(e)}")
-            return render_template('veiculos/gerar_qr_code.html', form=form, veiculo=veiculo)
-    return render_template('veiculos/gerar_qr_code.html', form=form, veiculo=veiculo)
+        c.showPage()
+        c.save()
+        logger.info(f"PDF finalizado no formato A4 com área de 140x80 mm e margem de 20px: {pdf_path}")
+
+        return redirect(url_for('veiculos.imprimir_id_colheita', id_veiculo=id_veiculo))
+    except Exception as e:
+        flash(f'Erro ao gerar QR-Code ou PDF: {str(e)}', 'danger')
+        logger.error(f"Erro ao gerar QR-Code ou PDF: {str(e)}")
+        return render_template('veiculos/gerar_qr_code.html', veiculo=veiculo)
 
 @veiculos_bp.route('/imprimir/<string:id_veiculo>')
 def imprimir_id_colheita(id_veiculo):
